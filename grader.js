@@ -28,6 +28,7 @@ var program = require('commander');
 var cheerio = require('cheerio');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
+var outfile = "remote_index.html";
 /*
 rest.get(instr).on('complete', function(result) {
   if (result instanceof Error) {
@@ -88,7 +89,7 @@ if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
-	.option('-u, --url <url>', 'Url of index.html', clone(assertUrlExists))
+	.option('-u, --url <url>', 'Url of index.html')
         .parse(process.argv);
 	console.log(program.url);	
 	if (program.url != null) {
@@ -100,7 +101,7 @@ if(require.main == module) {
             			} else {
             //sys.puts(result);
                 		fs.writeFileSync(outfile, result);
-                		var checkJson = checkHtmlFile(program.file, program.checks);
+                		var checkJson = checkHtmlFile(outfile, program.checks);
                 		var outJson = JSON.stringify(checkJson, null, 4);
                 		console.log(outJson);
             		}
@@ -114,7 +115,6 @@ if(require.main == module) {
 } else {
     exports.checkHtmlFile = checkHtmlFile;
 }
-
 
 
 
