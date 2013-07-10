@@ -21,12 +21,25 @@ References:
    - https://developer.mozilla.org/en-US/docs/JSON#JSON_in_Firefox_2
 */
 
+var util = require('util');
 var fs = require('fs');
+var rest = require('restler');
 var program = require('commander');
 var cheerio = require('cheerio');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
-
+/*
+rest.get(instr).on('complete', function(result) {
+  if (result instanceof Error) {
+    console.log("%s cannot be found: %s", instr, result.message);
+    process.exit(1);
+  }        
+  else {            
+    // do your processing on result here because this is an asynchronous callback
+    // you can call another function here and pass result as an argument
+  }
+});
+*/
 var assertFileExists = function(infile) {
     var instr = infile.toString();
     if(!fs.existsSync(instr)) {
@@ -35,6 +48,16 @@ var assertFileExists = function(infile) {
     }
     return instr;
 };
+
+var assertUrlExists = function(infile) {
+    var instr = infile.toString();
+    if(!fs.existsSync(instr)) {
+        console.log("%s does not exist. Exiting.", instr);
+        process.exit(1); // http://nodejs.org/api/process.html#process_process_exit_code
+    }
+    return instr;
+};
+
 
 var cheerioHtmlFile = function(htmlfile) {
     return cheerio.load(fs.readFileSync(htmlfile));
@@ -65,10 +88,33 @@ if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+	.option('-u, --url <url>', 'Url of index.html', clone(assertUrlExists))
         .parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
-    var outJson = JSON.stringify(checkJson, null, 4);
-    console.log(outJson);
+	console.log(program.url);	
+	if (program.url != null) {
+        //var checkurl = testurl(program.url); // this is basically getting the URL as a string
+        	rest.get(program.url).on('complete', function(result) {
+            		if (result instanceof Error) {
+                		console.log('Error: ' + result.message);
+                		this.retry(5000); // try again after 5 sec
+            			} else {
+            //sys.puts(result);
+                		fs.writeFileSync(outfile, result);
+                		var checkJson = checkHtmlFile(program.file, program.checks);
+                		var outJson = JSON.stringify(checkJson, null, 4);
+                		console.log(outJson);
+            		}
+        	});
+    	} else {
+
+        var checkJson = checkHtmlFile(program.file, program.checks);
+        var outJson = JSON.stringify(checkJson, null, 4);
+        console.log(outJson);
+    }
 } else {
     exports.checkHtmlFile = checkHtmlFile;
 }
+
+
+
+
